@@ -22,7 +22,7 @@ public class UserDaoJDBCImpl implements UserDao {
                     "(id INT PRIMARY KEY AUTO_INCREMENT NOT NULL, " +
                     "name VARCHAR(30) NOT NULL, " +
                     "lastName VARCHAR(30) NOT NULL, " +
-                    "age INT(3) NOT NULL)";
+                    "age TINYINT(3) NOT NULL)";
             statement.executeUpdate(createUsersTable);
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -42,27 +42,51 @@ public class UserDaoJDBCImpl implements UserDao {
 
     public void saveUser(String name, String lastName, byte age) {
         String str = "insert into users(name, lastName, age) values(?,?,?)";
+        Statement statement = null;
 
-        try (Connection connect = getConnectionDB();
-             PreparedStatement st = connect.prepareStatement(str)) {
+        try (Connection connect = getConnectionDB()) {
+            statement = connect.createStatement();
+            statement.executeUpdate("start transaction");
+            PreparedStatement st = connect.prepareStatement(str);
             st.setString(1, name);
             st.setString(2, lastName);
             st.setByte(3, age);
             st.executeUpdate();
+            statement.executeUpdate("commit");
             System.out.printf("User с именем – %s добавлен в базу данных \n", name);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            try {
+                if (statement != null) {
+                    statement.executeUpdate("rollback");
+                }
+                throw new RuntimeException(e);
+            } catch (SQLException e1) {
+                throw new RuntimeException(e1);
+            }
         }
     }
 
+
     public void removeUserById(long id) {
-        Statement statement;
-        try (Connection connection = getConnectionDB()) {
-            statement = connection.createStatement();
-            String removeUserById = "DELETE FROM users WHERE id = " + id;
-            statement.executeUpdate(removeUserById);
+        String remove = "DELETE FROM users WHERE id = " + id;
+        Statement statement = null;
+
+        try (Connection connect = getConnectionDB()) {
+            statement = connect.createStatement();
+            statement.executeUpdate("start transaction");
+            PreparedStatement st = connect.prepareStatement(remove);
+            st.setLong(1, id);
+            st.executeUpdate();
+            statement.executeUpdate("commit");
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            try {
+                if (statement != null) {
+                    statement.executeUpdate("rollback");
+                }
+                throw new RuntimeException(e);
+            } catch (SQLException e1) {
+                throw new RuntimeException(e1);
+            }
         }
     }
 
@@ -87,13 +111,23 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     public void cleanUsersTable() {
-        Statement statement;
+        String clean = "DELETE FROM users";
+        Statement statement = null;
+
         try (Connection connection = getConnectionDB()) {
             statement = connection.createStatement();
-            String cleanUsersTable = "DELETE FROM users";
-            statement.executeUpdate(cleanUsersTable);
+            statement.executeUpdate("start transaction");
+            statement.executeUpdate(clean);
+            statement.executeUpdate("commit");
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            try {
+                if (statement != null) {
+                    statement.executeUpdate("rollback");
+                }
+                throw new RuntimeException(e);
+            } catch (SQLException e1) {
+                throw new RuntimeException(e1);
+            }
         }
     }
 }

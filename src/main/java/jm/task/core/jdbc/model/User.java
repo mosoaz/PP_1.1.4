@@ -22,7 +22,7 @@ public class User {
 
     }
 
-    public User(String name, String lastName, Byte age) {
+    public User(String name, String lastName, byte age) {
         this.name = name;
         this.lastName = lastName;
         this.age = age;
@@ -66,7 +66,7 @@ public class User {
         return age;
     }
 
-    public void setAge(Byte age) {
+    public void setAge(byte age) {
         this.age = age;
     }
 }
